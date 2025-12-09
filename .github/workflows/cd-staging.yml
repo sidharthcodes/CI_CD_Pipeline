@@ -1,0 +1,40 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-push-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/ci-cd-demo:${{ github.sha }} -f backend/Dockerfile backend
+
+      - name: Push image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ci-cd-demo:${{ github.sha }}
+
+      - name: Deploy to staging server via SSH (pull & restart)
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # ensure deploy.sh exists and is executable on the server
+            /home/${{ secrets.SSH_USER }}/deploy.sh ${{ secrets.DOCKERHUB_USERNAME }}/ci-cd-demo:${{ github.sha }} staging

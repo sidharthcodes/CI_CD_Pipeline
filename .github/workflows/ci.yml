@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  django-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Django tests
+        run: |
+          cd backend
+          pytest -q
+
+      - name: Lint backend (flake8)
+        run: |
+          cd backend
+          pip install flake8
+          flake8 || true
