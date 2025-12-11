@@ -1,0 +1,36 @@
+name: Deploy to Render (production)
+
+on:
+  push:
+    branches:
+      - main    # merge to main triggers deploy
+  workflow_dispatch:    # manual trigger if you want to run it from Actions tab
+
+jobs:
+  trigger-render-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # (Optional) Run any lightweight post-merge checks here, e.g. smoke tests
+
+      - name: Trigger Render deploy (production)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID_PROD }}
+        run: |
+          echo "Triggering deploy for service ${RENDER_SERVICE_ID}..."
+          resp=$(curl -s -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          echo "Render response: $resp"
+          # Optional: simple check for an 'id' in response (deploy created)
+          if echo "$resp" | grep -q '"id"'; then
+            echo "Deploy triggered."
+          else
+            echo "Failed to trigger deploy. Full response:"
+            echo "$resp"
+            exit 1
+          fi
