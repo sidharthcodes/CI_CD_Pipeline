@@ -12,7 +12,7 @@ def health(request):
 
 @require_GET
 def default(request):
-    return JsonResponse({"msg": "It's working !?"})
+    return JsonResponse({"msg": "I'm Batman!"})
 
 @require_POST
 @csrf_exempt
